@@ -1,28 +1,61 @@
+from datetime import datetime
+
 from tracker import get_balance
-from sheet import save_balance
+from sheet import get_consumers, save_balance
 from telegram import send_message
 
-print("Fetching balance...")
 
-data = get_balance()
+def main():
 
-print(f"Consumer : {data['customer']}")
-print(f"Balance  : {data['balance']} Tk")
+    print("Powered by Romeo")
+    print("---------------------------")
 
-# Save to Google Sheet
-save_balance(
-    data["customer"],
-    data["balance"]
-)
+    consumers = get_consumers()
 
-# Send Telegram Message
-message = f"""⚡ NescoWatch
-Powered by Romeo
+    summary = []
 
-👤 Consumer : {data['customer']}
-💰 Balance  : {data['balance']} Tk
-"""
+    summary.append("⚡ NescoWatch")
+    summary.append("Powered by Romeo")
+    summary.append("")
 
-send_message(message)
+    for item in consumers:
 
-print("Done.")
+        try:
+
+            print(f"Checking {item['consumer']}")
+
+            data = get_balance(item["consumer"])
+
+            save_balance(
+                item["sheet"],
+                data["balance"]
+            )
+
+            summary.append(
+                f"✅ {item['name']}\n"
+                f"🔢 {item['consumer']}\n"
+                f"💰 {data['balance']} Tk\n"
+            )
+
+        except Exception as e:
+
+            print(e)
+
+            summary.append(
+                f"❌ {item['name']}\n"
+                f"🔢 {item['consumer']}\n"
+                f"{e}\n"
+            )
+
+    summary.append("")
+    summary.append(
+        "🕒 " + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    )
+
+    send_message("\n".join(summary))
+
+    print("Finished.")
+
+
+if __name__ == "__main__":
+    main()
