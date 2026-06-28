@@ -9,7 +9,7 @@ def get_balance(consumer_number):
 
     session = requests.Session()
 
-    response = session.get(BASE_URL)
+    response = session.get(BASE_URL, timeout=30)
 
     if response.status_code != 200:
         raise Exception("Cannot open NESCO website")
@@ -43,10 +43,9 @@ def get_balance(consumer_number):
     )
 
     if not match:
-        raise Exception(f"Balance not found for {consumer_number}")
+        raise Exception("Balance not found")
 
     return {
         "consumer": consumer_number,
         "balance": match.group(1).strip()
     }
-
