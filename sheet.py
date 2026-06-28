@@ -1,7 +1,7 @@
 import os
-import gspread
-
 from datetime import datetime
+
+import gspread
 from google.oauth2.service_account import Credentials
 
 SCOPES = [
@@ -16,55 +16,43 @@ creds = Credentials.from_service_account_file(
 
 client = gspread.authorize(creds)
 
-spreadsheet = client.open_by_key(os.getenv("SHEET_ID"))
+spreadsheet = client.open_by_key(
+    os.getenv("SHEET_ID")
+)
 
 
 def get_consumers():
 
-    sheet = spreadsheet.worksheet("Consumers")
+    ws = spreadsheet.worksheet("Consumers")
 
-    rows = sheet.get_all_values()
+    rows = ws.get_all_records()
 
     consumers = []
 
-    for row in rows[1:]:
+    for row in rows:
 
-        if len(row) < 3:
-            continue
+        enabled = str(row.get("Enabled", "TRUE")).strip().upper()
 
-        sheet_name = row[0].strip()
-        display_name = row[1].strip()
-        consumer_number = row[2].strip()
-
-        if consumer_number == "":
+        if enabled != "TRUE":
             continue
 
         consumers.append({
-            "sheet": sheet_name,
-            "name": display_name,
-            "consumer": consumer_number
+            "sheet": row["Sheet"],
+            "name": row["Name"],
+            "consumer": str(row["Consumer"])
         })
 
     return consumers
 
 
-def save_balance(sheet_name, balance):
+def get_sheet(sheet_name):
 
-    ws = spreadsheet.worksheet(sheet_name)
+    return spreadsheet.worksheet(sheet_name)
 
-    now = datetime.now()
-
-    ws.append_row([
-        now.strftime("%Y-%m-%d"),
-        now.strftime("%H:%M:%S"),
-        balance
-    ])
-
-    print(f"Saved -> {sheet_name}")
 
 def save_balance(sheet_name, balance):
 
-    ws = spreadsheet.worksheet(sheet_name)
+    ws = get_sheet(sheet_name)
 
     now = datetime.now()
 
@@ -76,30 +64,3 @@ def save_balance(sheet_name, balance):
     ])
 
     print(f"Saved -> {sheet_name}")
-
-
-def get_consumers():
-
-    ws = spreadsheet.worksheet("Consumers")
-
-    rows = ws.get_all_values()
-
-    consumers = []
-
-    for row in rows[1:]:
-
-        if len(row) < 4:
-            continue
-
-        enabled = row[3].strip().upper()
-
-        if enabled != "TRUE":
-            continue
-
-        consumers.append({
-            "sheet": row[0].strip(),
-            "name": row[1].strip(),
-            "consumer": row[2].strip()
-        })
-
-    return consumers
