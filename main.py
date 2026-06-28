@@ -1,7 +1,11 @@
-from datetime import datetime
+from sheet import (
+    get_consumers,
+    save_balance,
+    get_alert,
+    now_bd
+)
 
 from tracker import get_balance
-from sheet import get_consumers, save_balance
 from telegram import send_message
 
 
@@ -13,61 +17,75 @@ def main():
 
     consumers = get_consumers()
 
-    if len(consumers) == 0:
-        print("No consumer found.")
-        return
+    summary = []
 
-    report = []
-
-    report.append("⚡ NescoWatch")
-    report.append("Powered by Romeo")
-    report.append("")
+    summary.append("⚡ NescoWatch")
+    summary.append("Powered by Romeo")
+    summary.append("")
 
     success = 0
     failed = 0
 
     for item in consumers:
 
-        print(f"Checking {item['name']} ({item['consumer']})")
-
         try:
 
             data = get_balance(item["consumer"])
 
-            save_balance(
+            balance = float(data["balance"])
+
+            info = save_balance(
                 item["sheet"],
-                data["balance"]
+                balance
             )
 
-            report.append(
-                f"✅ {item['name']}\n"
-                f"🔢 {item['consumer']}\n"
-                f"💰 {data['balance']} Tk\n"
+            yesterday = info["yesterday"]
+
+            if yesterday is None:
+                yesterday_text = "N/A"
+            else:
+                yesterday_text = f"{yesterday:.3f}"
+
+            summary.append("━━━━━━━━━━━━━━━━━━")
+            summary.append(f"👤 {item['name']}")
+            summary.append(f"🔢 {item['consumer']}")
+            summary.append("")
+            summary.append(f"📅 Yesterday : {yesterday_text} Tk")
+            summary.append(f"💰 Balance   : {balance:.3f} Tk")
+            summary.append(f"📉 Daily Uses: {info['daily_uses']:.3f} Tk")
+            summary.append("")
+
+            alert = get_alert(
+                balance,
+                item["name"],
+                item["consumer"]
             )
+
+            if alert:
+                send_message(alert)
 
             success += 1
 
         except Exception as e:
 
-            report.append(
-                f"❌ {item['name']}\n"
-                f"🔢 {item['consumer']}\n"
-                f"⚠️ {str(e)}\n"
-            )
-
             failed += 1
 
-    report.append("")
-    report.append("━━━━━━━━━━━━━━")
-    report.append(f"✅ Success : {success}")
-    report.append(f"❌ Failed : {failed}")
-    report.append(
-        datetime.now().strftime("🕒 %Y-%m-%d %H:%M:%S")
+            summary.append("━━━━━━━━━━━━━━━━━━")
+            summary.append(f"👤 {item['name']}")
+            summary.append(f"❌ {e}")
+            summary.append("")
+
+    summary.append("━━━━━━━━━━━━━━━━━━")
+    summary.append(f"✅ Updated : {success}")
+    summary.append(f"❌ Failed  : {failed}")
+    summary.append("")
+    summary.append(
+        f"🕒 {now_bd()['date']} {now_bd()['time']}"
     )
 
-    send_message("\n".join(report))
+    send_message("\n".join(summary))
 
-    print("Finished.")
+    print("Finished")
 
 
 if __name__ == "__main__":
