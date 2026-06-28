@@ -1,8 +1,8 @@
+import os
 import gspread
-from google.oauth2.service_account import Credentials
-from datetime import datetime
 
-from config import SHEET_ID
+from datetime import datetime
+from google.oauth2.service_account import Credentials
 
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
@@ -16,16 +16,48 @@ creds = Credentials.from_service_account_file(
 
 client = gspread.authorize(creds)
 
-sheet = client.open_by_key(SHEET_ID).sheet1
+spreadsheet = client.open_by_key(os.getenv("SHEET_ID"))
 
 
-def save_balance(consumer, balance):
-    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+def get_consumers():
 
-    sheet.append_row([
-        now,
-        consumer,
+    sheet = spreadsheet.worksheet("Consumers")
+
+    rows = sheet.get_all_values()
+
+    consumers = []
+
+    for row in rows[1:]:
+
+        if len(row) < 3:
+            continue
+
+        sheet_name = row[0].strip()
+        display_name = row[1].strip()
+        consumer_number = row[2].strip()
+
+        if consumer_number == "":
+            continue
+
+        consumers.append({
+            "sheet": sheet_name,
+            "name": display_name,
+            "consumer": consumer_number
+        })
+
+    return consumers
+
+
+def save_balance(sheet_name, balance):
+
+    ws = spreadsheet.worksheet(sheet_name)
+
+    now = datetime.now()
+
+    ws.append_row([
+        now.strftime("%Y-%m-%d"),
+        now.strftime("%H:%M:%S"),
         balance
     ])
 
-    print("✅ Saved to Google Sheet")
+    print(f"Saved -> {sheet_name}")
