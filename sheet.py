@@ -61,3 +61,45 @@ def save_balance(sheet_name, balance):
     ])
 
     print(f"Saved -> {sheet_name}")
+
+def save_balance(sheet_name, balance):
+
+    ws = spreadsheet.worksheet(sheet_name)
+
+    now = datetime.now()
+
+    ws.append_row([
+        now.strftime("%Y-%m-%d"),
+        now.strftime("%H:%M:%S"),
+        balance,
+        ""
+    ])
+
+    print(f"Saved -> {sheet_name}")
+
+
+def get_consumers():
+
+    ws = spreadsheet.worksheet("Consumers")
+
+    rows = ws.get_all_values()
+
+    consumers = []
+
+    for row in rows[1:]:
+
+        if len(row) < 4:
+            continue
+
+        enabled = row[3].strip().upper()
+
+        if enabled != "TRUE":
+            continue
+
+        consumers.append({
+            "sheet": row[0].strip(),
+            "name": row[1].strip(),
+            "consumer": row[2].strip()
+        })
+
+    return consumers
