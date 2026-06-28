@@ -7,22 +7,30 @@ from telegram import send_message
 
 def main():
 
+    print("=" * 50)
     print("Powered by Romeo")
-    print("---------------------------")
+    print("=" * 50)
 
     consumers = get_consumers()
 
-    summary = []
+    if len(consumers) == 0:
+        print("No consumer found.")
+        return
 
-    summary.append("⚡ NescoWatch")
-    summary.append("Powered by Romeo")
-    summary.append("")
+    report = []
+
+    report.append("⚡ NescoWatch")
+    report.append("Powered by Romeo")
+    report.append("")
+
+    success = 0
+    failed = 0
 
     for item in consumers:
 
-        try:
+        print(f"Checking {item['name']} ({item['consumer']})")
 
-            print(f"Checking {item['consumer']}")
+        try:
 
             data = get_balance(item["consumer"])
 
@@ -31,28 +39,33 @@ def main():
                 data["balance"]
             )
 
-            summary.append(
+            report.append(
                 f"✅ {item['name']}\n"
                 f"🔢 {item['consumer']}\n"
                 f"💰 {data['balance']} Tk\n"
             )
 
+            success += 1
+
         except Exception as e:
 
-            print(e)
-
-            summary.append(
+            report.append(
                 f"❌ {item['name']}\n"
                 f"🔢 {item['consumer']}\n"
-                f"{e}\n"
+                f"⚠️ {str(e)}\n"
             )
 
-    summary.append("")
-    summary.append(
-        "🕒 " + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            failed += 1
+
+    report.append("")
+    report.append("━━━━━━━━━━━━━━")
+    report.append(f"✅ Success : {success}")
+    report.append(f"❌ Failed : {failed}")
+    report.append(
+        datetime.now().strftime("🕒 %Y-%m-%d %H:%M:%S")
     )
 
-    send_message("\n".join(summary))
+    send_message("\n".join(report))
 
     print("Finished.")
 
