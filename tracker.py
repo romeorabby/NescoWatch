@@ -49,3 +49,4 @@ def get_balance(consumer_number):
         "consumer": consumer_number,
         "balance": match.group(1).strip()
     }
+
