@@ -11,7 +11,8 @@ def send_message(message):
 
     payload = {
         "chat_id": CHAT_ID,
-        "text": message
+        "text": message,
+        "disable_web_page_preview": True
     }
 
     response = requests.post(
@@ -21,8 +22,6 @@ def send_message(message):
     )
 
     if response.status_code != 200:
-        raise Exception(
-            f"Telegram Error : {response.text}"
-        )
+        raise Exception(response.text)
 
     return response.json()
