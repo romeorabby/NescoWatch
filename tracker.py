@@ -2,10 +2,10 @@ import re
 import requests
 from bs4 import BeautifulSoup
 
-from config import CUSTOMER_NUMBER, BASE_URL
+BASE_URL = "https://customer.nesco.gov.bd/pre/panel"
 
 
-def get_balance():
+def get_balance(consumer_number):
 
     session = requests.Session()
 
@@ -20,7 +20,7 @@ def get_balance():
 
     payload = {
         "_token": token,
-        "cust_no": CUSTOMER_NUMBER,
+        "cust_no": consumer_number,
         "submit": "রিচার্জ হিস্ট্রি"
     }
 
@@ -32,23 +32,20 @@ def get_balance():
     response = session.post(
         BASE_URL,
         data=payload,
-        headers=headers
+        headers=headers,
+        timeout=30
     )
-
-    html = response.text
 
     match = re.search(
         r'অবশিষ্ট ব্যালেন্স.*?value="([^"]+)"',
-        html,
+        response.text,
         re.S
     )
 
     if not match:
-        raise Exception("Balance not found")
-
-    balance = match.group(1).strip()
+        raise Exception(f"Balance not found for {consumer_number}")
 
     return {
-        "customer": CUSTOMER_NUMBER,
-        "balance": balance
+        "consumer": consumer_number,
+        "balance": match.group(1).strip()
     }
